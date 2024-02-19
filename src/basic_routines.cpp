@@ -132,6 +132,22 @@ bool AMR::parseAllFilesToFindOrder(
   // The routine should return a boolean indicating whether the order id was found or not.
 
   bool found = false;
+  auto parseDeliveryPoint = [&](YAML::iterator &it) {
+    delivery_point._x = (*it)["cx"].as<double>();
+    delivery_point._y = (*it)["cy"].as<double>();
+  };
+
+  auto parseProducts = [&](YAML::iterator &it) {
+    YAML::Node products = (*it)["products"];
+    ordered_products.resize(products.size());
+    uint32_t i = 0;
+    for (auto products_iter = products.begin();
+          products_iter != products.end(); ++products_iter) {
+      ordered_products.at(i) = (*products_iter).as<long long int>();
+      ++i;
+    }
+  };
+
   std::for_each(std::execution::par_unseq, std::begin(file_names), std::end(file_names), [&](const std::string &filename){
     std::ifstream fin(filename);
     if (!fin.is_open())
@@ -149,17 +165,8 @@ bool AMR::parseAllFilesToFindOrder(
 
       found = true;
       std::cout << "order id found: " << order_id_ << std::endl;
-      delivery_point._x = (*it)["cx"].as<double>();
-      delivery_point._y = (*it)["cy"].as<double>();
-
-      YAML::Node products = (*it)["products"];
-      ordered_products.resize(products.size());
-      uint32_t i = 0;
-      for (auto products_iter = products.begin();
-           products_iter != products.end(); ++products_iter) {
-        ordered_products.at(i) = (*products_iter).as<long long int>();
-        ++i;
-      }
+      parseDeliveryPoint(it);
+      parseProducts(it);
     }
 
   });
