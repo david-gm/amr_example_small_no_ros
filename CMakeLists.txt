@@ -6,7 +6,8 @@ set(CMAKE_CXX_STANDARD 17)
 add_compile_options(-Wall -Wextra -Wpedantic -Wextra)
 
 # One could use cmake to find all the required packages.
-#find_package(GTest REQUIRED)
+find_package(GTest REQUIRED)
+find_package(TBB REQUIRED)
 
 set(amr_INCLUDES
   include/amr_interface.hpp
@@ -25,7 +26,7 @@ set(amr_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_library(amr_basis STATIC ${amr_SOURCES})
 target_include_directories(amr_basis PUBLIC ${amr_INCLUDE_DIRS})
 target_link_libraries(amr_basis PUBLIC
-  -lyaml-cpp )
+  -lyaml-cpp TBB::tbb)
 
 # executables are listed here:
 add_executable( OrderOptimizer src/executables/amr_main.cpp )

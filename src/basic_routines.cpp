@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <execution>
+#include <chrono>
 
 #include "yaml-cpp/yaml.h"
 
@@ -128,5 +130,39 @@ bool AMR::parseAllFilesToFindOrder(
   // ordered_products. 
   // If the order_id has not been found, these output values do not have to be set.
   // The routine should return a boolean indicating whether the order id was found or not.
-  return false;
+
+  bool found = false;
+  std::for_each(std::execution::par_unseq, std::begin(file_names), std::end(file_names), [&](const std::string &filename){
+    std::ifstream fin(filename);
+    if (!fin.is_open())
+      std::cerr <<  "file: " << filename  << " not found " << std::endl;
+
+    YAML::Node order_doc = YAML::Load(fin);
+    long long int n_orders = order_doc.size();
+    std::cout << "file " << filename << ", num orders: " << n_orders << std::endl;
+
+    for (auto it = order_doc.begin(); it != order_doc.end(); ++it) {
+      uint32_t order_id_ = (*it)["order"].as<uint32_t>();
+
+      if(order_id_ != order_id)
+        continue;
+
+      found = true;
+      std::cout << "order id found: " << order_id_ << std::endl;
+      delivery_point._x = (*it)["cx"].as<double>();
+      delivery_point._y = (*it)["cy"].as<double>();
+
+      YAML::Node products = (*it)["products"];
+      ordered_products.resize(products.size());
+      uint32_t i = 0;
+      for (auto products_iter = products.begin();
+           products_iter != products.end(); ++products_iter) {
+        ordered_products.at(i) = (*products_iter).as<long long int>();
+        ++i;
+      }
+    }
+
+  });
+
+  return found;
 }
