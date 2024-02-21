@@ -112,26 +112,12 @@ bool AMR::parseAllFilesToFindOrder(
     const std::string &dir_path, const uint32_t order_id,
     AMR::Coordinates2D &delivery_point,
     std::vector<long long int> &ordered_products) {
-  // the number of files and the names of the files is hardcoded here. It
-  // could be retrieved by using std::filesystem routines
-  int n_files = 5;
+
   std::vector<std::string> file_names = {
       dir_path + "/orders_20201201.yaml", dir_path + "/orders_20201202.yaml",
       dir_path + "/orders_20201203.yaml", dir_path + "/orders_20201204.yaml",
       dir_path + "/orders_20201205.yaml"};
 
-  // PLEASE ADD YOUR IMPLEMENTATION HERE
-  // EXPLANATION: The user provides dir_path and order_id as input variables.
-  // It is your task to parse the different files (in parallel) to see if any of them 
-  // contains an order whose id is 'order_id'. If an order with this id is found, the 
-  // corresponding delivery point coordinates (specified by cx and cy) should be parsed 
-  // and written to the output variable delivery_point. Furthermore, the list of products 
-  // should be parsed and the product ids should be inserted in the output vector 
-  // ordered_products. 
-  // If the order_id has not been found, these output values do not have to be set.
-  // The routine should return a boolean indicating whether the order id was found or not.
-
-  bool found = false;
   auto parseDeliveryPoint = [&](YAML::iterator &it) {
     delivery_point._x = (*it)["cx"].as<double>();
     delivery_point._y = (*it)["cy"].as<double>();
@@ -148,6 +134,9 @@ bool AMR::parseAllFilesToFindOrder(
     }
   };
 
+  bool found = false;
+  std::mutex m;
+
   std::for_each(std::execution::par_unseq, std::begin(file_names), std::end(file_names), [&](const std::string &filename){
     std::ifstream fin(filename);
     if (!fin.is_open())
@@ -163,6 +152,7 @@ bool AMR::parseAllFilesToFindOrder(
       if(order_id_ != order_id)
         continue;
 
+      std::lock_guard<std::mutex> guard(m);
       found = true;
       std::cout << "order id found: " << order_id_ << std::endl;
       parseDeliveryPoint(it);
