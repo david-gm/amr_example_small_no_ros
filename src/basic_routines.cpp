@@ -10,6 +10,29 @@
 
 #include "yaml-cpp/yaml.h"
 
+void AMR::heapsAlgorithm(int a[], int size, int n, std::vector<std::vector<int>> &output){
+    // if size becomes 1 adds the obtained
+    // permutation
+    if (size == 1) {
+        output.push_back(std::vector<int>(a, a+n));
+        return;
+    }
+
+    for (int i = 0; i < size; i++) {
+        heapsAlgorithm(a, size - 1, n, output);
+
+        // if size is odd, swap 0th i.e (first) and
+        // (size-1)th i.e (last) element
+        if (size % 2 == 1)
+            std::swap(a[0], a[size - 1]);
+
+        // If size is even, swap ith and
+        // (size-1)th i.e (last) element
+        else
+            std::swap(a[i], a[size - 1]);
+    }
+}
+
 double AMR::determinePathLength(
     const AMR::Coordinates2D &starting_point,
     const std::vector<Coordinates2D> &part_locations,
@@ -47,7 +70,30 @@ void AMR::determineShortestPath(
   // if part_locations contains 3 locations, a possible output would be {1,0,2}. This would 
   // mean that the shortest path is: 
   // starting_point, part_locations[1], part_locations[0], part_locations[2], delivery_point
+  uint n = part_locations.size();
+  //std::vector<int> pickup_order_in(n);
+
+  // form permutations with no repition: n!
+  n = 5;
+  std::vector<int> pickup_order_in(n);
+
+  for(uint8_t i = 0; i < n; ++i) {
+      pickup_order_in.at(i) = i;
+  }
+
+  std::vector<std::vector<int>> output;
+  heapsAlgorithm(pickup_order_in.data(), n, n, output);
+  // for(auto &x : output)  {
+  //     for(auto &y : x) {
+  //         std::cout << y << " ";
+  //     }
+  //     std::cout << std::endl;
+  // }
+
+  std::cout << "length: " << output.size() << std::endl;
 }
+
+
 
 void AMR::parseConfigurationFiles(
     const std::string &dir_path, std::vector<AMR::Product> &all_products,

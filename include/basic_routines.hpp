@@ -12,6 +12,9 @@
 #include "basic_structs.hpp"
 
 namespace AMR {
+
+void heapsAlgorithm(int a[], int size, int n, std::vector<std::vector<int>> &output);
+
 /**
  * @brief Determines the length of a given path
  *
