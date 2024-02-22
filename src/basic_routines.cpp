@@ -10,16 +10,18 @@
 
 #include "yaml-cpp/yaml.h"
 
-void AMR::heapsAlgorithm(int a[], int size, int n, std::vector<std::vector<int>> &output){
+#define PRINT_DEBUG
+
+void AMR::heapsAlgorithm(std::vector<int> a, unsigned int size, std::vector<std::vector<int>> &output){
     // if size becomes 1 adds the obtained
     // permutation
     if (size == 1) {
-        output.push_back(std::vector<int>(a, a+n));
+        output.push_back(a);
         return;
     }
 
-    for (int i = 0; i < size; i++) {
-        heapsAlgorithm(a, size - 1, n, output);
+    for (unsigned int i = 0; i < size; i++) {
+        heapsAlgorithm(a, size - 1, output);
 
         // if size is odd, swap 0th i.e (first) and
         // (size-1)th i.e (last) element
@@ -57,41 +59,67 @@ double AMR::determinePathLength(
   return path_length;
 }
 
+
 void AMR::determineShortestPath(
     const AMR::Coordinates2D &starting_point,
     const std::vector<Coordinates2D> &part_locations,
     const AMR::Coordinates2D &delivery_point, std::vector<int> &pickup_order) {
-  // first, prepare the output variable pickup_order
-  pickup_order.resize(part_locations.size());
-  
-  // PLEASE ADD YOUR IMPLEMENTATION HERE
-  // EXPLANATION: The vector pickup_order should be filled with integers that indicate 
-  // in which order the parts in the vector part_locations should be picked up. For example, 
-  // if part_locations contains 3 locations, a possible output would be {1,0,2}. This would 
-  // mean that the shortest path is: 
-  // starting_point, part_locations[1], part_locations[0], part_locations[2], delivery_point
-  uint n = part_locations.size();
-  //std::vector<int> pickup_order_in(n);
+    // first, prepare the output variable pickup_order
+    pickup_order.resize(part_locations.size());
 
-  // form permutations with no repition: n!
-  n = 5;
-  std::vector<int> pickup_order_in(n);
+    // PLEASE ADD YOUR IMPLEMENTATION HERE
+    unsigned int n = part_locations.size();
 
-  for(uint8_t i = 0; i < n; ++i) {
-      pickup_order_in.at(i) = i;
-  }
+    // form permutations with no repition: n!
+    std::vector<int> pickup_order_in(n);
+    for(unsigned int i = 0; i < n; ++i) {
+        pickup_order_in.at(i) = i;
+    }
 
-  std::vector<std::vector<int>> output;
-  heapsAlgorithm(pickup_order_in.data(), n, n, output);
-  // for(auto &x : output)  {
-  //     for(auto &y : x) {
-  //         std::cout << y << " ";
-  //     }
-  //     std::cout << std::endl;
-  // }
+    std::vector<std::vector<int>> permutations;
+    heapsAlgorithm(pickup_order_in, n, permutations);
 
-  std::cout << "length: " << output.size() << std::endl;
+#ifdef PRINT_DEBUG
+    auto printVec = [](const std::vector<int> &vec){
+        for(const auto &y : vec) {
+            std::cout << y << " ";
+        }
+        std::cout << std::endl;
+    };
+    auto printPermutations = [&permutations, &printVec](){
+        std::cout << "permutations: " << std::endl;
+        for(const auto &permutation: permutations) {
+            printVec(permutation);
+        }
+        std::cout << "length: " << permutations.size() << std::endl;
+    };
+    auto printPickupOrder  = [&pickup_order, &printVec]() {
+        std::cout << "pickup order: ";
+        printVec(pickup_order);
+    };
+
+    printPermutations();
+#endif
+
+    // find shortest path of all permutations
+    unsigned int shortest_path_index = 0;
+    double shortest_path = 10e9;
+    for(unsigned int i = 0; i < permutations.size(); ++i)  {
+        double current_path = determinePathLength(starting_point, part_locations, delivery_point, permutations.at(i));
+        if(shortest_path > current_path) {
+            shortest_path = current_path;
+            shortest_path_index = i;
+        }
+    }
+
+    for(unsigned int i = 0; i < pickup_order.size(); ++i) {
+        pickup_order.at(i) = permutations.at(shortest_path_index).at(i);
+    }
+#ifdef PRINT_DEBUG
+    printPickupOrder();
+#endif
 }
+
 
 
 
@@ -159,53 +187,54 @@ bool AMR::parseAllFilesToFindOrder(
     AMR::Coordinates2D &delivery_point,
     std::vector<long long int> &ordered_products) {
 
-  std::vector<std::string> file_names = {
-      dir_path + "/orders_20201201.yaml", dir_path + "/orders_20201202.yaml",
-      dir_path + "/orders_20201203.yaml", dir_path + "/orders_20201204.yaml",
-      dir_path + "/orders_20201205.yaml"};
+    std::vector<std::string> file_names = {
+                                           dir_path + "/orders_20201201.yaml", dir_path + "/orders_20201202.yaml",
+                                           dir_path + "/orders_20201203.yaml", dir_path + "/orders_20201204.yaml",
+                                           dir_path + "/orders_20201205.yaml"};
 
-  auto parseDeliveryPoint = [&](YAML::iterator &it) {
-    delivery_point._x = (*it)["cx"].as<double>();
-    delivery_point._y = (*it)["cy"].as<double>();
-  };
+    // PLEASE ADD YOUR IMPLEMENTATION HERE
+    auto parseDeliveryPoint = [&](YAML::iterator &it) {
+        delivery_point._x = (*it)["cx"].as<double>();
+        delivery_point._y = (*it)["cy"].as<double>();
+    };
 
-  auto parseProducts = [&](YAML::iterator &it) {
-    YAML::Node products = (*it)["products"];
-    ordered_products.resize(products.size());
-    uint32_t i = 0;
-    for (auto products_iter = products.begin();
-          products_iter != products.end(); ++products_iter) {
-      ordered_products.at(i) = (*products_iter).as<long long int>();
-      ++i;
-    }
-  };
+    auto parseProducts = [&](YAML::iterator &it) {
+        YAML::Node products = (*it)["products"];
+        ordered_products.resize(products.size());
+        uint32_t i = 0;
+        for (auto products_iter = products.begin();
+             products_iter != products.end(); ++products_iter) {
+            ordered_products.at(i) = (*products_iter).as<long long int>();
+            ++i;
+        }
+    };
 
-  bool found = false;
-  std::mutex m;
+    bool found = false;
+    std::mutex m;
 
-  std::for_each(std::execution::par_unseq, std::begin(file_names), std::end(file_names), [&](const std::string &filename){
-    std::ifstream fin(filename);
-    if (!fin.is_open())
-      std::cerr <<  "file: " << filename  << " not found " << std::endl;
+    std::for_each(std::execution::par_unseq, std::begin(file_names), std::end(file_names), [&](const std::string &filename){
+        std::ifstream fin(filename);
+        if (!fin.is_open())
+            std::cerr <<  "file: " << filename  << " not found " << std::endl;
 
-    YAML::Node order_doc = YAML::Load(fin);
-    long long int n_orders = order_doc.size();
-    std::cout << "file " << filename << ", num orders: " << n_orders << std::endl;
+        YAML::Node order_doc = YAML::Load(fin);
+        long long int n_orders = order_doc.size();
+        std::cout << "file " << filename << ", num orders: " << n_orders << std::endl;
 
-    for (auto it = order_doc.begin(); it != order_doc.end(); ++it) {
-      uint32_t order_id_ = (*it)["order"].as<uint32_t>();
+        for (auto it = order_doc.begin(); it != order_doc.end(); ++it) {
+            uint32_t order_id_ = (*it)["order"].as<uint32_t>();
 
-      if(order_id_ != order_id)
-        continue;
+            if(order_id_ != order_id)
+                continue;
 
-      std::lock_guard<std::mutex> guard(m);
-      found = true;
-      std::cout << "order id found: " << order_id_ << std::endl;
-      parseDeliveryPoint(it);
-      parseProducts(it);
-    }
+            std::lock_guard<std::mutex> guard(m);
+            found = true;
+            std::cout << "order id found: " << order_id_ << std::endl;
+            parseDeliveryPoint(it);
+            parseProducts(it);
+        }
 
-  });
+    });
 
-  return found;
+    return found;
 }

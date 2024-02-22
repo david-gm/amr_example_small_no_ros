@@ -13,7 +13,15 @@
 
 namespace AMR {
 
-void heapsAlgorithm(int a[], int size, int n, std::vector<std::vector<int>> &output);
+/**
+ * @brief heapsAlgorithm
+ * @param a the input array
+ * @param size the size of the next permutation (at the beginning it is the size of a
+ * @param output all permutations in a vector
+ * @note algorithm from https://www.geeksforgeeks.org/heaps-algorithm-for-generating-permutations/
+ *       but slightly adjusted
+ */
+void heapsAlgorithm(std::vector<int> a, unsigned int size, std::vector<std::vector<int>> &output);
 
 /**
  * @brief Determines the length of a given path
