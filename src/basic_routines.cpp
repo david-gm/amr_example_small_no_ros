@@ -10,18 +10,18 @@
 
 #include "yaml-cpp/yaml.h"
 
-#define PRINT_DEBUG
+//#define PRINT_DEBUG
 
-void AMR::heapsAlgorithm(std::vector<int> a, unsigned int size, std::vector<std::vector<int>> &output){
+void AMR::heapsAlgorithm(int a[], unsigned int size, unsigned int n, std::vector<std::vector<int>> &output){
     // if size becomes 1 adds the obtained
     // permutation
     if (size == 1) {
-        output.push_back(a);
+        output.push_back(std::vector<int>(a, a+n));
         return;
     }
 
     for (unsigned int i = 0; i < size; i++) {
-        heapsAlgorithm(a, size - 1, output);
+        heapsAlgorithm(a, size - 1, n, output);
 
         // if size is odd, swap 0th i.e (first) and
         // (size-1)th i.e (last) element
@@ -69,15 +69,14 @@ void AMR::determineShortestPath(
 
     // PLEASE ADD YOUR IMPLEMENTATION HERE
     unsigned int n = part_locations.size();
-
     // form permutations with no repition: n!
-    std::vector<int> pickup_order_in(n);
+    int pickup_order_in[n];
     for(unsigned int i = 0; i < n; ++i) {
-        pickup_order_in.at(i) = i;
+        pickup_order_in[i] = i;
     }
 
     std::vector<std::vector<int>> permutations;
-    heapsAlgorithm(pickup_order_in, n, permutations);
+    heapsAlgorithm(pickup_order_in, n, n, permutations);
 
 #ifdef PRINT_DEBUG
     auto printVec = [](const std::vector<int> &vec){
